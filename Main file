@@ -1,0 +1,234 @@
+/*
+    Description: Creating a DVD rental program that processes and displays movies from a file
+    Date: November 25, 2020
+    Author: Abhinav Gupta
+    Version: 1.0
+    Copyright: 2020 Abhinav Gupta
+*/
+
+/*
+	DOCUMENTATION
+	
+	Program Purpose:
+        Reads a tab delimited file, each line of which represents attributes of a DVD,
+        parses the movie attributes and creates an array of DVD objects.
+
+    Compile: g++ TMA2Question1.cpp DVD.cpp -o TMA2Question1
+    Execution: ./TMA2Question1
+
+    Classes: DVD class which is an object to store the attributes and related functions for a DVD in a rental store.
+	
+    Functions:
+        getline() - function to read in lines from the text file in order to store them into the array
+        strtok() and atoi() - functions used to tokenize the string object extracted by the getline function and
+        split them up into the appropriate elements to add to the appropriate attributes of each DVD
+        printDVDList - void - function to print all DVDs that are stored in the array from the movies file
+        readMoviesFromFile - DVD* - function to read movies in from the text file and create an array full of them
+
+    Variables:
+        testFile1, testFile2, and testFile3 - ifstream - Variables to store the names of the text files to be tested
+        movies - DVD* - This is the array created by the readMoviesFromFile function which then also stores the
+        movies read in from the test files
+        NUM_MOVIES - global constant - This is given the value of 10 and is used for readability as the array is
+        specified to be of size 10 and thus this constant gives a name to that value when it is used in the functions
+*/
+
+/*
+    TEST PLAN
+
+    Normal Case: The program adds 10 movie instances to the array after reading them in from the file (demonstrated
+    when testing 10MoviesTestFile)
+        >File 10MoviesTestFile.txt:
+        >- - - - - - - - - - - - - - - - - - - - - - - - -
+        >Index: 1
+        >Title: Inception
+        >Director: Christopher Nolan
+        >Release date: 2010
+        >Rating: PG-13
+        >Runtime: 164
+        >Genre: Sci Fi
+        >In stock: No
+        >The DVD has 0 holds placed on it
+        >The DVD is currently 0 days past its due date
+                    ...
+
+    Normal Case: The program does not accept movies in the file that come after the size 10 limit and thus only
+    the first 10 will be saved to the array (demonstrated when testing file 11MoviesTestFile)
+        >File 11MoviesTestFile.txt:
+        >- - - - - - - - - - - - - - - - - - - - - - - - -
+        >Index: 1
+        >Title: Inception
+        >Director: Christopher Nolan
+        >Release date: 2010
+        >Rating: PG-13
+        >Runtime: 164
+        >Genre: Sci Fi
+        >In stock: No
+        >The DVD has 0 holds placed on it
+        >The DVD is currently 0 days past its due date
+                    ...
+
+    Normal Case: The program does not add movies to the array if the file has fewer elements than 10. The objects
+    created in the array without any data are just empty and are kept as placeholders (demonstrated when testing file
+    6MoviesTestFile starting from index 7)
+        >Index: 7
+        >Title:
+        >Director:
+        >Release date:
+        >Rating:
+        >Runtime: 0
+        >Genre:
+        >In stock: No
+        >The DVD has 0 holds placed on it
+        >The DVD is currently 0 days past its due date
+
+    Bad Data Case: The program does not tokenize elements from the file well if they are not delineated with tabs. If
+    there is a mix of spacing in the file between the columns there will be a misallocation of attributes in the array
+    (demonstrated when testing file 6MoviesTestFile at index 6)
+        >Index: 6
+        >Title: Knocked Up              Judd Apatow
+        >Director: 2007
+        >Release date: R
+        >Rating: 128     Rom Com
+        >Runtime: 0
+        >Genre: 1
+        >In stock: Yes
+        >The DVD has 0 holds placed on it
+        >The DVD is currently 0 days past its due date
+
+    Limit Case: If the file contains more elements than 11 then the program will ignore the elements after 10
+    (demonstrated when testing file 11MoviesTestFile)
+        >Index: 10
+        >Title: Joker
+        >Director: Todd Phillips
+        >Release date: 2019
+        >Rating: R
+        >Runtime: 122
+        >Genre: Thriller
+        >In stock: No
+        >The DVD has 3 holds placed on it
+        >The DVD is currently 2 days past its due date
+
+    Discussion:
+        This program opens a text file and assumes that the contents of that file start with a header and that
+        the columns separating those headers as well as their contents are tab delineated. Thus the program
+        reads into the file using the readMoviesFromFile function which simultaneously creates an array of
+        10 DVDs to store the contents of the file into. While reading through the file using the getline()
+        function, the for loop tokenizes the lines and separates the contents into different attributes and
+        stores them in the appropriate place in the array that is created. Finally, the program outputs the
+        contents of the array using the display() function that was created as part of the DVD class.
+*/
+
+#include <algorithm>
+#include <iostream>
+#include <cstdlib>
+#include <fstream>
+#include <cstring>
+#include "DVD.h"
+#define NUM_MOVIES 10
+
+using namespace std;
+
+/*
+    Assumptions:
+    - The first line of the file includes header that are not used by the program
+    - The file will not contain more than NUM_MOVIES number of DVDs
+    - It is expected that all movie attributes are present in both correct format and order
+
+    @param inFile ready to ready file stream.
+    @return array of DVD objects
+*/
+
+DVD* readMoviesFromFile(ifstream &inFile) {
+    string movieLine;
+    DVD* movies = (DVD*) calloc(NUM_MOVIES, sizeof(DVD));
+    char delimiter = '\t';
+
+    // we deliberately ignore the first line of the file, as it contains headers
+    getline(inFile, movieLine);
+
+    for (int i = 0; getline(inFile, movieLine) && i < NUM_MOVIES; i++) {
+        // movie attributes parsed to appropriate types expected by DVD class
+        string title = strtok((char *) movieLine.c_str(), &delimiter);
+        string director = strtok(NULL, &delimiter);
+        string releaseDate = strtok(NULL, &delimiter);
+        string rating = strtok(NULL, &delimiter);
+        int runtime = atoi(strtok(NULL, &delimiter)); // Convert string to int value
+        string genre = strtok(NULL, &delimiter);
+        bool inStockStatus = atoi(strtok(NULL, &delimiter));
+        int numHolds = atoi(strtok(NULL, &delimiter)); // Convert string to int
+        int daysOverdue = atoi(strtok(NULL, &delimiter)); // Convert string to int
+
+        movies[i] = DVD(
+                title,
+                director,
+                releaseDate,
+                rating,
+                runtime,
+                genre,
+                inStockStatus,
+                numHolds,
+                daysOverdue
+        );
+    }
+    return movies;
+}
+
+/**
+    Prints a list of DVDs separated by dashed lines for readability
+
+    Assumptions:
+    - The first line of the file includes header that are not used by the program
+    - The file will not contain more than NUM_MOVIES number of DVDs
+    - It is expected that all movie attributes are present in both correct format and order
+
+    @param movies array of DVD objects
+    @return void
+*/
+void printDVDList(DVD *movies) {
+    cout << "- - - - - - - - - - - - - - - - - - - - - - - - - " << endl;
+    for (int i = 0; i < NUM_MOVIES; i++) {
+        cout << "Index: " << i + 1 << endl;
+        movies[i].print();
+        cout << "- - - - - - - - - - - - - - - - - - - - - - - - - " << endl;
+    }
+}
+
+/**
+    Entry point of the program. Expects one argument - a path to a text file of movies.
+    Reads a file of movies, creates appropriate DVD objects and prints the complete
+    list of all DVD objects found within the file.
+
+    @param argc number of program arguments
+    @param argv array of program arguments
+    @return void
+*/
+int main() {
+    ifstream testFile1("10MoviesTestFile.txt");
+    if (!testFile1.is_open())
+        cerr << "File 10MoviesTestFile.txt is not found" << endl;
+    else {
+        cout << "File 10MoviesTestFile.txt:" << endl;
+        DVD *movies = readMoviesFromFile(testFile1);
+        printDVDList(movies);
+    }
+
+    ifstream testFile2("6MoviesTestFile.txt");
+    if (!testFile2.is_open())
+        cerr << "File 6MoviesTestFile.txt is not found" << endl;
+    else {
+        cout << "File 6MoviesTestFile.txt:" << endl;
+        DVD *movies = readMoviesFromFile(testFile2);
+        printDVDList(movies);
+    }
+
+    ifstream testFile3("11MoviesTestFile.txt");
+    if (!testFile3.is_open())
+        cerr << "File 11MoviesTestFile.txt is not found" << endl;
+    else {
+        cout << "File 11MoviesTestFile.txt:" << endl;
+        DVD *movies = readMoviesFromFile(testFile3);
+        printDVDList(movies);
+    }
+    return 0;
+}
